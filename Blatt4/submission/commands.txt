@@ -1,0 +1,48 @@
+Commands used to create and upload Docker images to dockerhub:
+
+1- create an account on docker hub
+https://hub.docker.com/signup
+
+2- create a repository
+https://hub.docker.com/repository/create
+
+3- login in to docker hub
+docker login 
+
+4- create 2 dockerfiles: frontend & backend
+touch frontend.Dockerfile
+touch backend.Dockerfile
+
+5- adding the commands to the frontend and backend dockerfiles
+
+5-1- for frontend.Dockerfile:
+FROM nginx:latest
+# copying the file conf.d
+COPY frontend.nginx.conf /etc/nginx/nginx.conf
+# starting the nginx
+CMD ["nginx","-g","daemon off;"]
+
+5-2- for backend.Dockerfile:
+FROM nginx:latest
+# copying backend.nginx,conf to nginx
+COPY backend.nginx.conf /etc/nginx/nginx.conf
+# starting the nginx
+CMD ["nginx","-g","daemon off;"]
+
+6- building a docker by tagging its ID, repository name and tagname, also the name of specific file should be added (in our case frontend.Dockerfile & backend.Dockerfile)
+docker build -t <docker username>/<repo name>:frontend -f frontend.Dockerfile .
+docker build -t <docker username>/<repo name>:backend -f backend.Dockerfile .
+
+7- login first to your docker account with username and password
+    docker login
+
+8- push the images to Dockerhub repository
+docker push <docker username>/<repo name>:frontend
+docker push <docker username>/<repo name>:backend
+
+9- run the webapp.yml playbook with ansible.playbook. The deployment tasks are executed only on the node1. To enable forwarding and reache the nodeport of the frontend service from outside
+   in order to run the tests, the first task in the playbook webapp.yml will be executed on the three nodes.
+ansible-playbook -i inventory/local/hosts.ini  --become --become-user=root webapp.yml --private-key=id_rsa
+
+10- find out the node port chosen by Kubernetes to export the frontend services on the VMs. This command can be executed on any node in the cluster because the chosed port is the same
+kubectl describe svc cc-frontend-service --namespace cc2020 | grep -i nodeport

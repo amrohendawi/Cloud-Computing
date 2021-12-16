@@ -1,0 +1,55 @@
+Task 3 Questions
+Give a short overall explanation in your own words of what you did in this assignment.
+In this assignment, we have built a private cloud service on top of google cloud service. We started by creating three VM nodes-Two compute nodes and one controller node. Two Different VPC networks with custom different subnets were created to address, communicate, and use the VMs in addition to using a nested virtualization license from google to use them as a service provider. Since the VMs were restricted to certain subnets, we accessed the VMsthrough tunneling as well as by adding our own local machine IP to the firewall-rule.OpenStack was deployed onto the VMs to transform them into a service provider. Afterward, a new nested instance was created using OpenStack CLI and then checked over OpenStack-dashboard. Finally, benchmarks were collected to evaluate the performance. In short, We as service consumers used google cloud service to launch 3VMs that we imployed as a VPC(Virtual private cloud). In other words, we built a private infrastructure using OpenStack and became a service provider nested in a larger service provider.
+
+After creating all gc VMs, deploying OpenStack and starting an Open-Stack VM, how many virtual networks are involved to establish the connectivity?
+Two google cloud networks (cc-network1, cc-network2) and one for Open-Stack (open-all), so overall, three networks were established in this task.
+
+Initially, the OpenStack VM was not reachable from the gc controller VM. Why?
+Because we were accessing the VM from outside of the assigned subnets.
+
+Look into the iptables-magic.sh script. What is happening there? Describe every command with 1-2 sentences.
+    # force bash shell
+    #/bin/bash
+
+    # Select subnet
+    floating_subnet="10.122.0.0/24"
+    # Select gateway
+    floating_gateway="10.122.0.1"
+
+    # on the docker container openvswitch_vswitchd add a new interface with the given floating
+    # gateway for device br-ex(should be a bridge for external acess by it's name)
+    docker exec openvswitch_vswitchd ip a add $floating_gateway dev br-ex
+
+    # again on the same docker container execute a command that brings the created interface online
+    docker exec openvswitch_vswitchd ip link set br-ex up
+
+    # set the MTU (maximum transmission) on device br-ex to 1400 to ensure correct ssh
+    docker exec openvswitch_vswitchd ip link set dev br-ex mtu 1400
+
+    # add an ip route for a given subnet via given gateway for device br-ex
+    ip r a "$floating_subnet" via $floating_gateway dev br-ex
+
+    # iptables is used to set up, maintain, and inspect the tables of IP packet filter rules in the Linux kernel.
+    # append a postrouting rule to the interface ens4 in the nat table
+    # MASQUERADE option allows specifying a mapping to the IP address of the interface the packet is going out,
+    # but also has the effect that connections are forgotten when the interface goes down.
+    iptables -t nat -A POSTROUTING -o ens4 -j MASQUERADE
+
+    # append a forwarding rule from the ens4 instance to br-ex instance
+    # ACCEPT means let the packets through
+    iptables -A FORWARD -i ens4 -o br-ex -j ACCEPT
+
+    # do the same as last line vice versa
+    iptables -A FORWARD -i br-ex -o ens4 -j ACCEPT
+
+2 Plot comparisons
+Compare each plot to the respective plots generated in assignment no. 1.Discuss the differences. Write 3-4 sentences for each plot. Paste the text into the submission text field on ISIS
+
+CPU Plots: When the CPU benchmark plots are compared we notice that the Openstack instance performs around 20% better. This could be due to the larger nested resources available for OpenStack when compared with the instance from the first assignment running one2-standard machine type
+
+Random-access disk read plots: Both plots are almost identical in terms of behavior, disregarding a couple of performance drops in the OpenStack benchmarks. These performance drops are hard to explain due to the number of interfaces over the real hardware, which makes it difficult to determine the original cause.
+
+Sequential-access disk read plots: We could observe that GCP performs better than OpenStack in the Sequential-access disk bench-mark. Both VM’s used the same disk (n2-standard-2). Nevertheless, GCP beats OpenStack in this benchmark. This could be due to the nested architecture (layering) of the whole setup.
+
+Memory plots: Even though both VMs are similar in terms of memory size and type Openstack shows a distinguishably higher benchmark when compared with GCP. This might be an effect of the machine-type difference between the two VMs. OpenStack runs on an n2-standard2 machine, which is probably optimized for sharing nested resources enabling better memory access.

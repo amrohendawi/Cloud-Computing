@@ -1,0 +1,33 @@
+Sending 100 requests to 34.107.10.55:32075...
+Sending 100 requests to 34.107.70.205:32075...
+Sending 100 requests to 34.89.145.243:32075...
+
+Encountered 4 frontends:
+cc-frontend-deployment-59554448d9-2qbgq
+cc-frontend-deployment-59554448d9-b759m
+cc-frontend-deployment-59554448d9-fd9rc
+cc-frontend-deployment-59554448d9-x227x
+
+Encountered 6 backends:
+cc-backend-deployment-bfbdbffcf-4sjss
+cc-backend-deployment-bfbdbffcf-2k5vx
+cc-backend-deployment-bfbdbffcf-4smmq
+cc-backend-deployment-bfbdbffcf-bjsqx
+cc-backend-deployment-bfbdbffcf-f69zh
+cc-backend-deployment-bfbdbffcf-d2zqz
+
+Encountered 12 reply texts:
+Hello! You are 10.233.92.51 and requested /etc/nginx/html/ from 10.233.92.55 (cc-backend-deployment-bfbdbffcf-d2zqz)
+Hello! You are 10.233.92.51 and requested /etc/nginx/html/ from 10.233.96.53 (cc-backend-deployment-bfbdbffcf-2k5vx)
+Hello! You are 10.233.92.51 and requested /etc/nginx/html/ from 10.233.96.55 (cc-backend-deployment-bfbdbffcf-4smmq)
+Hello! You are 10.233.92.53 and requested /etc/nginx/html/ from 10.233.92.54 (cc-backend-deployment-bfbdbffcf-f69zh)
+Hello! You are 10.233.92.53 and requested /etc/nginx/html/ from 10.233.92.56 (cc-backend-deployment-bfbdbffcf-4sjss)
+Hello! You are 10.233.92.53 and requested /etc/nginx/html/ from 10.233.96.56 (cc-backend-deployment-bfbdbffcf-bjsqx)
+Hello! You are 10.233.96.50 and requested /etc/nginx/html/ from 10.233.92.55 (cc-backend-deployment-bfbdbffcf-d2zqz)
+Hello! You are 10.233.96.50 and requested /etc/nginx/html/ from 10.233.96.53 (cc-backend-deployment-bfbdbffcf-2k5vx)
+Hello! You are 10.233.96.50 and requested /etc/nginx/html/ from 10.233.96.55 (cc-backend-deployment-bfbdbffcf-4smmq)
+Hello! You are 10.233.96.52 and requested /etc/nginx/html/ from 10.233.92.54 (cc-backend-deployment-bfbdbffcf-f69zh)
+Hello! You are 10.233.96.52 and requested /etc/nginx/html/ from 10.233.92.56 (cc-backend-deployment-bfbdbffcf-4sjss)
+Hello! You are 10.233.96.52 and requested /etc/nginx/html/ from 10.233.96.56 (cc-backend-deployment-bfbdbffcf-bjsqx)
+
+All tests passed.

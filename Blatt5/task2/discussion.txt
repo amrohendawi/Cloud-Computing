@@ -1,0 +1,24 @@
+1) Which steps in your program require communication and synchronization between your workers?
+
+The master reads the input data and distributes it to the worker nodes. For this step communication is required.
+Additionally, the groupBy command requires communication.
+In the end the workers need to be synchronized to form one output file out of the generated results.
+
+
+2) What resources is the job bound by? Memory? CPU? Network? Disk?
+
+The job is bound by all 4 component:
+1- The execution of the job is bound by the workers' CPU, since the data processing load is on the CPU.
+2- During the processing of the data the job is also bound by the memory, which can form a bottleneck if the data is large enough.
+3- The job is bound by the network in terms of communication and synchronization between the nodes, e.g. merging the file data sink.
+4- The input data needs to be loaded and the output data needs to be stored. This is bound by the disk speed and free space.
+
+Overall, the CPU represents the largest bottleneck.
+
+
+
+3) Could you improve the partitioning of your data to yield better run-time?
+
+The data could be stored on an HDFS system where it is stored in blocks. Doing so, the data could be read in parallel, thus reducing the runtime.
+
+

@@ -1,0 +1,35 @@
+1- download the latest open-source flink as well as the standalone with the binaries and unpack them.
+    wget https://ftp.fau.de/apache/flink/flink-1.12.1/flink-1.12.1-src.tgz
+    wget https://www.apache.org/dyn/closer.lua/flink/flink-1.12.1/flink-1.12.1-bin-scala_2.12.tgz
+
+    tar -xvf flink-1.12.1*****.tgz      (or just manually)
+
+##################### build WordCount.java ######################
+2- in the open-source flink we downloaded go to
+    flink-examples/flink-examples-streaming/src/main/java/org/apache/flink/streaming/examples/wordcount
+and edit WordCount the way you want.
+
+3- now make sure you are in this directory
+    flink-examples/flink-examples-streaming
+and run
+    mvn clean package -DskipTests -Dcheckstyle.skip
+
+if you get errors from "spotless-maven-plugin:2.4.2:check" this basically means you have coding-style issues.
+run
+    mvn spotless:apply
+to fix those coding-style issues
+
+4- if everything goes well your generated jar files will be in
+    flink-examples/flink-examples-streaming/target
+
+##################### run WordCount.jar #######################
+5- take the WordCount.jar generated from WordCount.java you edited at the beginning and copy it to the flink standalone directory
+    and copy any text file. for example tolstoy war and peace book as txt.
+
+6- in the standalone directory of flink start flink cluster
+    ./bin/start-cluster.sh
+
+you can open the dashboard over http://localhost:8081/
+
+7- run in the flink directory
+    ./bin/flink run WordCount.jar --input tolstoy-war-and-peace.txt --output tolstoy_sorted.csv

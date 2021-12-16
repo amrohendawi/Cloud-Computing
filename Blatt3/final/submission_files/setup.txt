@@ -1,0 +1,99 @@
+We used an n2-standard-2 machine type with nested virtualization enabled running Ubuntu 18.04 as our native machine where we run exec_benchmark.sh to handle the rest of the job.
+The experiment host has a standard 2vCPU, 8GB of RAM and 100GB standard storage. The image running on the experiment host is the same from assignment 2.
+In order to enable docker we make sure HTTP and HTTPS protocols are enabled in the GCP VM.
+We used an open firewall rule which allows all IPs and includes tcp, udp and icmp(why icmp? just extra) protocols.
+
+We used libvirt with qemu to create the two qemu VMs
+In general, we use the latest and the greatest versions of all software we use. Here are some version outputs:
+
+1- Docker version 20.10.0, build 7287ab3
+2- QEMU emulator version 2.11.1(Debian 1:2.11+dfsg-1ubuntu7.34)
+3- KVM Version: 1:2.11+dfsg-1ubuntu7.34 
+4- Qemu images use ubuntu-18.04
+5- sysbench 1.0.11 (using system LuaJIT 2.1.0-beta3)
+6- clang version 6.0.0-1ubuntu2
+7- Selected GCC installation: /usr/bin/../lib/gcc/x86_64-linux-gnu/7.5.0
+8- iperf 3.1.3
+
+
+----------------------------------------------------------------------------------------
+for Qemu images here are the installation steps in short:
+
+These instructions were only tested on a gcloud nested VM and enabled nested-vm-license. if you are working on different type of machine you might need to do some adjustments.
+make sure first to do sudo apt update and afterwards sudo apt upgrade
+
+1- install required system packages
+        sudo apt install qemu-kvm libvirt-bin qemu-utils genisoimage virtinst
+2- Download Ubuntu 18.04 cloud image
+        wget https://cloud-images.ubuntu.com/bionic/current/bionic-server-cloudimg-amd64.img
+3- Verify that image format is QCOW2
+        qemu-img info bionic-server-cloudimg-amd64.img
+
+
+4- Create directory for base images:
+        sudo mkdir /var/lib/libvirt/images/base
+5- Move downloaded image into this folder:
+        sudo mv bionic-server-cloudimg-amd64.img /var/lib/libvirt/images/base/ubuntu-18.04.qcow2
+6- Create directory for our instance images:
+        sudo mkdir /var/lib/libvirt/images/instance-1
+7- Create a disk image based on the Ubuntu image with 5GB disk size:
+        sudo qemu-img create -f qcow2 -o backing_file=/var/lib/libvirt/images/base/ubuntu-18.04.qcow2 /var/lib/libvirt/images/instance-1/instance-1.qcow2 5G
+8- check image state
+        sudo qemu-img info /var/lib/libvirt/images/instance-1/instance-1.qcow2
+
+
+9- Create meta-data
+        cat >meta-data <<EOF
+local-hostname: instance-1
+EOF
+11- if you have never created an ssh-key then run
+        ssh-keygen -t rsa -f id_rsa        
+10- Read public key into environment variable:
+        export PUB_KEY=$(cat id_rsa.pub)
+
+11- Create user-data:
+        cat >user-data <<EOF
+#cloud-config
+users:
+  - name: ubuntu
+    ssh-authorized-keys:
+      - $PUB_KEY
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    groups: sudo
+    shell: /bin/bash
+runcmd:
+  - echo "AllowUsers ubuntu" >> /etc/ssh/sshd_config
+  - restart ssh
+EOF
+
+12- Create a disk to attach with Cloud-Init configuration:
+        sudo genisoimage  -output /var/lib/libvirt/images/instance-1/instance-1-cidata.iso -volid cidata -joliet -rock user-data meta-data
+13- Launch the VM
+        sudo virt-install --connect qemu:///system --virt-type qemu --name instance-1 --ram 4096 --vcpus=2 --os-type linux --os-variant ubuntu18.04 --disk path=/var/lib/libvirt/images/instance-1/instance-1.qcow2,format=qcow2 --disk /var/lib/libvirt/images/instance-1/instance-1-cidata.iso,device=cdrom --import --network network=default --noautoconsole
+
+in case you get error not supported refer to https://www.claudiokuenzler.com/blog/956/unable-create-kvm-virtual-achine-host-does-not-support-domain-type-kvm-for-virtualization
+basically, you need to make sure nested virtualization is enabled
+
+14- Make sure the virtual machine is running:
+        sudo virsh list
+
+15- Get the IP address:
+        sudo virsh domifaddr instance-1
+16- modify ownership rights on the private key
+        chmod 600 id_rsa
+17- ssh into the VM:
+         ssh -i id_rsa ubuntu@<ip address you got in the table without CIDR part>
+
+
+to manage the VM use:
+
+#shutdown
+sudo virsh shutdown instance-name
+reboot
+sudo virsh reboot instance-name
+#start
+sudo virsh start instance-name
+#remove
+sudo virsh undefine instance-name
+
+to create a non-kvm VM repeat steps 6,7,8,12,13 replacing all instance-1 to a different name and at step 13 change --virt-type kvm to --virt-type qemu 

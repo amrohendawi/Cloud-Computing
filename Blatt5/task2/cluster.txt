@@ -1,0 +1,68 @@
+Steps to initialize the cluster:
+We have extended the kubernetes cluster from the last homework up to 5 nodes to be able to cover high CPU usage.
+
+Step1: 
+
+	- deploy flink on the cluster:
+		After login to any VM in the cluster we used the common cluster resource definitions to get the  deployments, configmaps, and services files.
+                Here is the list of the used files:
+			- flink-configuration-configmap.yaml
+			- jobmanager-rest-service.yaml
+               		- jobmanager-service.yaml
+               		- jobmanager-session-deployment.yaml
+                	- taskmanager-query-state-service.yaml
+                	- taskmanager-session-deployment.yaml  
+		And create resources With this command for each file: 
+			> kubectl create -f ${the list of files}
+		To check that flink ui is reachable make sure that the firewall rules enable ingress and egress. 
+		With this command we can find the needed forwarded port of the service "flink-taskmanager-query-state":
+			> kubectl get services
+		Then using the external IP address of the VM and the forwarded port we can reache the UI and testing flink cluster with TopSpeedWindowing.jar i.e.:
+			> ./bin/flink run -m 34.89.188.18:30081 ./examples/streaming/TopSpeedWindowing.jar
+
+Step2: 
+	- deploy hadoop on the cluster:
+		To install hadoop on kubernetes cluster we need to have helm:
+			> sudo snap install helm --classic
+		then pull the stable repo:
+			> helm repo add stable https://charts.helm.sh/stable
+		and update:
+			> helm repo update
+		
+		Now we can install and create a hadoop cluster by running this command:
+			> helm install   \
+    			  --set yarn.nodeManager.resources.limits.memory=4096Mi \
+    			  --set yarn.nodeManager.replicas=1 \
+     			  stable/hadoop   --generate-name	
+		
+		To check is the cluster works, we can ssh with kubernetes to the namenode pod (the pod with the sufix "nn" at the end) and create a dummy directory and file:
+		        > ./bin/hadoop fs -mkdir hdfs://User
+		        > /bin/hadoop fs -put dummy.txt hdfs://User
+		Now to read the stored dummy file we can forward the port of the pod hadoop-1612045327-hadoop-hdfs-nn and then installing the binary of hadoop.
+		Now we can control the file system hdfs and use it from all pods of the cluster.  for example reading the dummy file:
+			>  ./hadoop fs -cat hdfs://10.233.70.12:9000/User/dummy.txt
+
+
+Step3: 
+	- Now we can modify WordCount.java to make it use "hdfs" file system. For this purpose we need to use these dependencies and then we can reache 'hdfs' file system :
+			<dependency>
+        			<groupId>org.apache.flink</groupId>
+        			<artifactId>flink-hadoop-compatibility_2.11</artifactId>
+        			<version>1.12.1</version>
+			</dependency>
+                        <dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-common</artifactId>
+				<version>${hadoop.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-hdfs</artifactId>
+				<version>${hadoop.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-mapreduce-client-core</artifactId>
+				<version>${hadoop.version}</version>
+			</dependency>
+	    

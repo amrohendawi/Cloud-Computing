@@ -1,0 +1,159 @@
+---
+
+- hosts: nodes
+  tasks: 
+   - name: allow forwarding from the port of external address to the nodeport
+     command: iptables -P FORWARD ACCEPT
+
+- hosts: node1
+  tasks:
+
+  - name: Update repositories cache and install "pip" package
+    apt:
+     name: python-pip
+     update_cache: yes
+
+  - name: Install setuptools python package
+    pip:
+     name: setuptools
+
+  - name: Install openshifts python package
+    pip:
+     name: openshift
+     version: "0.8.6"
+   
+  - name: Install PyYAML python package
+    pip:
+     name: PyYAML
+     version: "5.3"
+   
+  - name: Install PyYAML python package
+    pip:
+     name: kubernetes
+     version: "8.0.1"
+
+  - name: Create a k8s namespace
+    community.kubernetes.k8s:
+     name: cc2020
+     api_version: v1
+     kind: Namespace
+     state: present
+
+
+  - name: Create a Service object from an inline definition for nginx backend
+    community.kubernetes.k8s:
+     state: present
+     definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: cc-backend-service
+        namespace: cc2020
+      spec:
+        selector:
+         app: cc-backend-service
+        ports:
+        - protocol: TCP
+          port: 80
+          targetport: 80
+
+  - name: Create a Service object from an inline definition for nginx frontend
+    community.kubernetes.k8s:
+     state: present
+     definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: cc-frontend-service
+        namespace: cc2020
+      spec:
+        type: NodePort
+        selector:
+         app: cc-frontend-service
+        ports:
+        - protocol: TCP
+          port: 80
+          targetPort: 80
+
+  - name: Create a deployment object from an inline definition for nginx frontend
+    community.kubernetes.k8s:
+      state: present
+      definition:
+       apiVersion: v1
+       kind: Deployment
+       metadata:
+        name: cc-frontend-deployment
+        namespace: cc2020
+       spec:
+        selector:
+         matchLabels:
+          app: cc-frontend-service
+          track: stable
+        replicas: 4
+        template:
+         metadata:
+          labels:
+           app: cc-frontend-service
+           tier: frontend
+           track: stable
+         spec:
+          containers:
+          - name: cc-frontend
+            image: shairgohmatini/cloud-computing:frontend
+            ports:
+             - containerPort: 80
+               protocol: TCP
+            livenessProbe:
+             httpGet:
+              path: /ready
+              port: 80
+             initialDelaySeconds: 5
+             periodSeconds: 5
+            readinessProbe:
+             httpGet:
+              path: /ready
+              port: 80
+             initialDelaySeconds: 5
+             periodSeconds: 5
+
+
+  - name: Create a deployment object from an inline definition for nginx backend
+    community.kubernetes.k8s:
+      state: present
+      definition:
+       apiVersion: v1
+       kind: Deployment
+       metadata:
+        name: cc-backend-deployment
+        namespace: cc2020
+       spec:
+        selector:
+         matchLabels:
+          app: cc-backend-service
+          track: stable
+        replicas: 6
+        template:
+         metadata:
+          labels:
+           app: cc-backend-service
+           track: stable
+         spec:
+          containers:
+          - name: nginx-backend
+            image: shairgohmatini/cloud-computing:backend
+            ports:
+             - containerPort: 80
+               protocol: TCP
+            livenessProbe:
+             httpGet:
+              path: /ready
+              port: 80
+             initialDelaySeconds: 5
+             periodSeconds: 5 
+            readinessProbe:
+             httpGet:
+              path: /ready
+              port: 80
+             initialDelaySeconds: 5
+             periodSeconds: 5
+
