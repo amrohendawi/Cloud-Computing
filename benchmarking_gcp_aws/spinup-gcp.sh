@@ -13,16 +13,16 @@ DEFCOLOR='\033[0m'
 ###################
 
 # Creating ssh keys pair using specified USER_NAME
-# echo "${COLOR}STEP 1: create ssh-key${DEFCOLOR}"
-# echo -e 'y\n' | ssh-keygen -f id_rsa -C $USER_NAME
+echo "${COLOR}STEP 1: create ssh-key${DEFCOLOR}"
+echo -e 'y\n' | ssh-keygen -f id_rsa -C $USER_NAME
 
-# # pub key is formatted as gcloud requires and saved in a metadata file
-# echo "${COLOR}\nSTEP 2: transform ssh.pub to gcloud key${DEFCOLOR}"
-# echo -n $USER_NAME":$(cat id_rsa.pub)" > $METADATA_FILE
+# pub key is formatted as gcloud requires and saved in a metadata file
+echo "${COLOR}\nSTEP 2: transform ssh.pub to gcloud key${DEFCOLOR}"
+echo -n $USER_NAME":$(cat id_rsa.pub)" > $METADATA_FILE
 
-# # add metadata_file with public ssh key to project metadata
-# echo "${COLOR}STEP 3: uploading the public key into the project metadata${DEFCOLOR}"
-# gcloud compute project-info add-metadata --metadata-from-file ssh-keys=$METADATA_FILE
+# add metadata_file with public ssh key to project metadata
+echo "${COLOR}STEP 3: uploading the public key into the project metadata${DEFCOLOR}"
+gcloud compute project-info add-metadata --metadata-from-file ssh-keys=$METADATA_FILE
 
 # create the firewall rule for ssh and icmp
 echo "${COLOR}STEP 4: create the firewall rule for ssh${DEFCOLOR}"
